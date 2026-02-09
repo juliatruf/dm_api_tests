@@ -1,3 +1,4 @@
+import uuid
 from json import loads
 
 from dm_api_account.apis.account_api import AccountApi
@@ -10,7 +11,8 @@ def test_put_v1_account_email():
     login_api = LoginApi(host='http://185.185.143.231:5051')
     mailhog_api = MailhogApi(host='http://185.185.143.231:5025')
 
-    login = 'juliatr_test6'
+    uid = uuid.uuid4().hex[:8]
+    login = f'user_{uid}'
     email_initial = f'{login}@inbox.ru'
     email_updated = f'{login}@bk.ru'
     password = '123456789'
