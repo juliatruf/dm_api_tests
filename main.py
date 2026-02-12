@@ -26,7 +26,7 @@ import requests
 # json = {
 #     "login": "juliat_test",
 #     "email": "juliat_test@mail.ru",
-#     "password": "1233456789"
+#     "password": "123456789"
 # }
 #
 # response = requests.post(
