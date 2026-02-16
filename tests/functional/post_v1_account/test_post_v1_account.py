@@ -1,4 +1,6 @@
-import uuid
+from collections import namedtuple
+from datetime import datetime
+import pytest
 
 from helpers.account_helper import AccountHelper
 from restclient.configuration import Configuration as MailhogConfiguration
@@ -6,7 +8,6 @@ from restclient.configuration import Configuration as DmApiConfiguration
 from services.dm_api_account import DMApiAccount
 from services.api_mailhog import MailHogApi
 import structlog
-
 
 structlog.configure(
     processors=[
@@ -18,18 +19,45 @@ structlog.configure(
     ]
 )
 
-def test_post_v1_account():
-    """Регистрация нового пользователя с последующей активацией и авторизацией"""
+
+@pytest.fixture
+def mailhog_api():
     mailhog_configuration = MailhogConfiguration(host='http://185.185.143.231:5025')
-    dm_api_configuration = DmApiConfiguration(host='http://185.185.143.231:5051', disable_log=False)
+    mailhog_client = MailHogApi(configuration=mailhog_configuration)
+    return mailhog_client
 
+
+@pytest.fixture
+def account_api():
+    dm_api_configuration = DmApiConfiguration(
+        host='http://185.185.143.231:5051', disable_log=False
+    )
     account = DMApiAccount(configuration=dm_api_configuration)
-    mailhog = MailHogApi(configuration=mailhog_configuration)
-    account_helper = AccountHelper(dm_account_api=account, mailhog=mailhog)
-    uid = uuid.uuid4().hex[:8]
-    login = f'user_{uid}'
-    email = f'{login}@list.ru'
-    password = '123456789'
+    return account
 
-    account_helper.register_new_user(login=login, email=email, password=password)
+
+@pytest.fixture
+def account_helper(account_api, mailhog_api):
+    account_helper = AccountHelper(dm_account_api=account_api, mailhog=mailhog_api)
+    return account_helper
+
+
+@pytest.fixture
+def prepare_user():
+    now = datetime.now()
+    data = now.strftime("%d_%m_%Y_%H_%M_%S")
+    login = f"jtruf_{data}"
+    password = "123456789"
+    email = f"{login}@list.ru"
+    User = namedtuple("User", ["login", "password", "email"])
+    user = User(login=login, password=password, email=email)
+    return user
+
+
+def test_post_v1_account(account_helper, prepare_user):
+    """Регистрация нового пользователя с последующей активацией и авторизацией"""
+    login = prepare_user.login
+    password = prepare_user.password
+    email = prepare_user.email
+    account_helper.register_new_user(login=login, password=password, email=email)
     account_helper.user_login(login=login, password=password)
