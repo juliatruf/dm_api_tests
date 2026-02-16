@@ -1,30 +1,16 @@
-import time
-from json import loads
+import json
+from json import JSONDecodeError
+from retrying import retry
 
 from services.dm_api_account import DMApiAccount
 from services.api_mailhog import MailHogApi
 
 
-def retrier(
-        function
+def retry_if_result_none(
+        result
 ):
-    def wrapper(
-            *args,
-            **kwargs
-    ):
-        token = None
-        count = 0
-        while token is None:
-            print(f"Попытка получения токена №{count+1}")
-            token = function(*args, **kwargs)
-            count += 1
-            if count == 5:
-                raise AssertionError("Превышено количество попыток получения активационного токена!")
-            if token:
-                return token
-            time.sleep(1)
-
-    return wrapper
+    """Return True if we should retry (in this case when result is None), False otherwise"""
+    return result is None
 
 
 class AccountHelper:
@@ -106,7 +92,7 @@ class AccountHelper:
         return response
 
 
-    @retrier
+    @retry(stop_max_attempt_number=5, retry_on_result=retry_if_result_none, wait_fixed=1000)
     def get_activation_token_by_login(
             self,
             login
@@ -116,7 +102,10 @@ class AccountHelper:
         response = self.mailhog.mailhog_api.get_api_v2_messages()
         assert response.status_code == 200, "Письма не были получены"
         for item in response.json()['items']:
-            user_data = loads(item['Content']['Body'])
+            try:
+                user_data = json.loads(item['Content']['Body'])
+            except (JSONDecodeError, KeyError):
+                continue
             user_login = user_data['Login']
             if user_login == login:
                 token = user_data['ConfirmationLinkUrl'].split('/')[-1]
