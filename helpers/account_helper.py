@@ -1,4 +1,5 @@
 import json
+import time
 from json import JSONDecodeError
 from retrying import retry
 
@@ -32,15 +33,10 @@ class AccountHelper:
             password: str
     ):
         self.auth_login = login
-        response = self.dm_account_api.login_api.post_v1_account_login(
-            json_data={'login': login, 'password': password}
-        )
-        token = {
-            "x-dm-auth-token": response.headers["x-dm-auth-token"],
-        }
+        response = self.user_login(login=login, password=password)
+        token = {"x-dm-auth-token": response.headers["x-dm-auth-token"]}
         self.dm_account_api.account_api.set_headers(token)
         self.dm_account_api.login_api.set_headers(token)
-        return
 
     def create_new_user(
             self,
@@ -69,7 +65,11 @@ class AccountHelper:
             error_message: str = None
     ):
         # Получение активационного токена
+        start_time = time.time()
         token = self.get_token_by_login(login=login, token_key_name=self.TOKEN_KEY_ACTIVATION)
+        end_time = time.time()
+        assert end_time - start_time < 3, "Время ожидания активационного токена превышено"
+        assert token is not None, f"Токен для пользователя {login} не был получен"
         # Активация пользователя
         response = self.dm_account_api.account_api.put_v1_account_token(token=token)
         if status_code is not None:
@@ -105,6 +105,8 @@ class AccountHelper:
         if status_code is not None:
             assert response.status_code == status_code, (
                     error_message or "Пользователь не смог авторизоваться")
+        if status_code == 200:
+            assert response.headers["x-dm-auth-token"], "Токен для пользователя не был получен"
         return response
 
     def change_user_email(
