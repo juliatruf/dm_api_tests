@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union, Any
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -24,17 +24,17 @@ class Rating(BaseModel):
 class User(BaseModel):
     login: str
     roles: List[UserRole]
-    medium_picture_url: str = Field(None, alias='mediumPictureUrl')
-    small_picture_url: str = Field(None, alias='smallPictureUrl')
-    status: str = Field(None, alias='status')
+    medium_picture_url: Optional[str] = Field(None, alias='mediumPictureUrl')
+    small_picture_url: Optional[str] = Field(None, alias='smallPictureUrl')
+    status: Optional[str] = Field(None, alias='status')
     rating: Rating
     online: datetime = Field(None, alias='online')
-    name: str = Field(None, alias='name')
-    location: str = Field(None, alias='location')
+    name: Optional[str] = Field(None, alias='name')
+    location: Optional[str] = Field(None, alias='location')
     registration: datetime = Field(None, alias='registration')
 
 
 class UserEnvelope(BaseModel):
     model_config = ConfigDict(extra="forbid")
     resource: Optional[User] = None
-    metadata: Optional[str] = None
+    metadata: Union[str, dict, Any, None] = None

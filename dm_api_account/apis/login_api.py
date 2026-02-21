@@ -8,10 +8,12 @@ class LoginApi(RestClient):
     def post_v1_account_login(
             self,
             login_credentials: LoginCredentials,
-            validate_response=True
+            validate_response: bool = True
     ):
         """
         Authenticate via credentials
+        :param login_credentials:
+        :param validate_response:
         :return:
         """
         response = self.post(
