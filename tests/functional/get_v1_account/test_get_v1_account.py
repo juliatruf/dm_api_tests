@@ -1,9 +1,12 @@
-from hamcrest import assert_that, all_of, has_property, has_properties, starts_with, instance_of, equal_to, has_items
+from hamcrest import assert_that, all_of, has_property, has_properties, equal_to, has_items
+
+from checkers.http_checkers import check_status_code_http
 
 
 def test_get_v1_account_auth(auth_account_helper, prepare_user):
     """Получение данных текущего пользователя авторизованным клиентом"""
-    response = auth_account_helper.get_current_user_info()
+    with check_status_code_http():
+        response = auth_account_helper.get_current_user_info()
     assert_that(response, has_property('resource', all_of(
         has_property('login', equal_to(auth_account_helper.auth_login)),
         has_property('rating', has_properties({
@@ -27,5 +30,5 @@ def test_get_v1_account_auth(auth_account_helper, prepare_user):
 
 def test_get_v1_account_no_auth(account_helper):
     """Отказ в получении данных текущего пользователя неавторизованным клиентом"""
-    response = account_helper.get_current_user_info(validate_response=False)
-    assert response.status_code == 401, f"Ожидался статус 401, но получен {response.status_code}"
+    with check_status_code_http(401, "User must be authenticated"):
+        account_helper.get_current_user_info()
