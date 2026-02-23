@@ -1,3 +1,6 @@
+from checkers.http_checkers import check_status_code_http
+
+
 def test_delete_v1_account_login_all(account_helper, prepare_user):
     """
     Выход из аккаунта на всех устройствах, кроме текущего
@@ -19,10 +22,7 @@ def test_delete_v1_account_login_all(account_helper, prepare_user):
     # Вызов DELETE /v1/account/login/all через авторизованный клиент
     account_helper.logout_all_sessions()
     # Проверка: Токен А первой сессии должен быть инвалидирован
-    response =  account_helper.get_current_user_info(
-        headers={'X-Dm-Auth-Token': token_a},
-        validate_response=False
-    )
-    assert response.status_code == 401, "Сессия на другом устройстве должна была закрыться"
+    with check_status_code_http(401, "User must be authenticated"):
+        account_helper.get_current_user_info(headers={'X-Dm-Auth-Token': token_a})
     # Проверка: Текущая сессия (Токен Б) должна остаться действительной
     account_helper.get_current_user_info()
