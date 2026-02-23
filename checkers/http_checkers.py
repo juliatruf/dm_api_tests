@@ -5,7 +5,7 @@ from requests.exceptions import HTTPError
 
 @contextmanager
 def check_status_code_http(
-        expected_status_code: requests.codes = requests.codes.OK,
+        expected_status_code: int = requests.codes.OK,
         expected_message: str = ""
 ):
     try:
