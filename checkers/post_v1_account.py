@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from hamcrest import assert_that, starts_with, all_of, has_property, instance_of, has_properties, equal_to
 
 
 class PostV1Account:
     @classmethod
     def check_response_values(cls, response):
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
         assert_that(
             response, all_of(
                 has_property('resource', has_property('login', starts_with('jtruf'))),
