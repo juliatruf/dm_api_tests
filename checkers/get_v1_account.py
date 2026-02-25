@@ -7,10 +7,10 @@ from dm_api_account.models.user_details_envelope import UserRole
 
 class GetV1Account:
     @classmethod
-    def check_response_values(cls, auth_account_helper, response):
+    def check_response_values(cls, response, login):
         with check_status_code_http():
             h_assert_that(response, has_property('resource', all_of(
-                has_property('login', equal_to(auth_account_helper.auth_login)),
+                has_property('login', equal_to(login)),
                 has_property('rating', has_properties({
                     "enabled": equal_to(True),
                     "quality": equal_to(0),
@@ -29,6 +29,6 @@ class GetV1Account:
                 ))
             )))
         with soft_assertions():
-            a_assert_that(response.resource.login).is_equal_to(auth_account_helper.auth_login)
+            a_assert_that(response.resource.login).is_equal_to(login)
             a_assert_that(response.resource.online).is_instance_of(datetime)
             a_assert_that(response.resource.roles).contains(UserRole.GUEST, UserRole.PLAYER)
