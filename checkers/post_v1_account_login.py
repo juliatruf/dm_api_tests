@@ -1,0 +1,31 @@
+from datetime import datetime, timezone
+
+import allure
+from hamcrest import assert_that, starts_with, all_of, has_property, instance_of, has_properties, equal_to
+
+
+class PostV1AccountLogin:
+    @classmethod
+    def check_response_values(cls, response, login):
+        with allure.step("Проверка данных аутентификации пользователя"):
+            today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+            assert_that(
+                response, all_of(
+                    has_property('resource', has_property('login', equal_to(login))),
+                    has_property('resource', has_property('registration', instance_of(datetime))),
+                    has_property(
+                        'resource', has_properties(
+                            {
+                                'rating': has_properties(
+                                    {
+                                        "enabled": equal_to(True),
+                                        "quality": equal_to(0),
+                                        "quantity": equal_to(0)
+                                    }
+                                )
+                            }
+                        )
+                    )
+                )
+            )
+            assert_that(str(response.resource.registration), starts_with(today))
