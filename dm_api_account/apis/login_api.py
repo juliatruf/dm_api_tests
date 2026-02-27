@@ -1,3 +1,5 @@
+import allure
+
 from dm_api_account.models.login_credentials import LoginCredentials
 from dm_api_account.models.user_envelope import UserEnvelope
 from restclient.client import RestClient
@@ -5,6 +7,7 @@ from restclient.client import RestClient
 
 class LoginApi(RestClient):
 
+    @allure.step("Войти в аккаунт пользователя")
     def post_v1_account_login(
             self,
             login_credentials: LoginCredentials,
@@ -24,6 +27,7 @@ class LoginApi(RestClient):
             return UserEnvelope(**response.json())
         return response
 
+    @allure.step("Сбросить текущую сессию")
     def delete_v1_account_login(
             self,
             **kwargs
@@ -38,6 +42,7 @@ class LoginApi(RestClient):
         )
         return response
 
+    @allure.step("Сбросить все сессии, кроме текущей")
     def delete_v1_account_login_all(
             self,
             **kwargs

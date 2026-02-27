@@ -2,6 +2,7 @@ import json
 import time
 from json import JSONDecodeError
 
+import allure
 from retrying import retry
 
 from dm_api_account.models.change_email import ChangeEmail
@@ -51,29 +52,30 @@ class AccountHelper:
             email=email,
             password=password
         )
-        # Регистрация пользователя без активации
         response = self.dm_account_api.account_api.post_v1_account(registration=registration)
         assert response.status_code == 201, "Пользователь не создан"
         return response
 
+    @allure.step("Активация пользователя")
     def activate_user(
             self,
             login: str,
             validate_response: bool = True
     ):
-        # Получение активационного токена
-        start_time = time.time()
-        token = self.get_token_by_login(login=login)
-        end_time = time.time()
-        assert end_time - start_time < 3, "Время ожидания активационного токена превышено"
-        assert token is not None, f"Токен для пользователя {login} не был получен"
-        # Активация пользователя
+        with allure.step(f"Получение активационного токена для {login}"):
+            start_time = time.time()
+            token = self.get_token_by_login(login=login)
+            end_time = time.time()
+            assert end_time - start_time < 3, "Время ожидания активационного токена превышено"
+            assert token is not None, f"Токен для пользователя {login} не был получен"
+
         response = self.dm_account_api.account_api.put_v1_account_token(
             token=token,
             validate_response=validate_response
         )
         return response
 
+    @allure.step("Регистрация и активация нового пользователя")
     def register_new_user(
             self,
             login: str,
@@ -81,10 +83,10 @@ class AccountHelper:
             email: str,
             validate_response: bool = True
     ):
-        # Регистрация нового пользователя с активацией
         self.create_new_user(login=login, password=password, email=email)
         return self.activate_user(login=login, validate_response=validate_response)
 
+    @allure.step("Аутентификация пользователя")
     def user_login(
             self,
             login: str,
@@ -98,7 +100,6 @@ class AccountHelper:
             password=password,
             remember_me=remember_me
         )
-        # Авторизация пользователя
         response = self.dm_account_api.login_api.post_v1_account_login(
             login_credentials=login_credentials,
             validate_response=validate_response,
@@ -107,6 +108,7 @@ class AccountHelper:
             assert response.headers["x-dm-auth-token"], "Токен для пользователя не был получен"
         return response
 
+    @allure.step("Изменение email зарегистрированного пользователя")
     def change_user_email(
             self,
             login: str,
@@ -114,7 +116,6 @@ class AccountHelper:
             email: str,
             validate_response: bool = True
     ):
-        # Изменение email зарегистрированного пользователя
         change_email = ChangeEmail(
             login=login,
             password=password,
@@ -126,6 +127,7 @@ class AccountHelper:
         )
         return response
 
+    @allure.step("Изменение пароля пользователя")
     def change_password(
             self,
             login: str,
@@ -135,7 +137,6 @@ class AccountHelper:
             validate_response: bool = True
     ):
         # Получение авторизационного токена
-        # token = self.user_login(login=login, password=old_password)
         auth_response = self.user_login(login=login, password=old_password, validate_response=False)
         auth_token = auth_response.headers["x-dm-auth-token"]
         # Сброс пароля (генерация токена сброса)
@@ -163,6 +164,7 @@ class AccountHelper:
         )
         return response
 
+    @allure.step("Получение данных текущего пользователя")
     def get_current_user_info(
             self,
             validate_response: bool = True,
@@ -172,9 +174,9 @@ class AccountHelper:
             validate_response=validate_response,
             **kwargs
         )
-        # assert response.status_code == 200, "Не удалось получить данные текущего пользователя"
         return response
 
+    @allure.step("Выход из текущей сессии (Logout)")
     def logout_current_session(
             self,
             **kwargs
@@ -184,6 +186,7 @@ class AccountHelper:
                                              f"Ожидали 204, получили {response.status_code}")
         return response
 
+    @allure.step("Выход изо всех сессий, кроме текущей")
     def logout_all_sessions(
             self,
             **kwargs
@@ -194,6 +197,7 @@ class AccountHelper:
         return response
 
 
+    @allure.step("Получение токена по логину")
     @retry(stop_max_attempt_number=5, retry_on_result=retry_if_result_none, wait_fixed=1000)
     def get_token_by_login(
             self,
@@ -212,17 +216,17 @@ class AccountHelper:
         # Получение письма из почтового сервера
         response = self.mailhog.mailhog_api.get_api_v2_messages()
         assert response.status_code == 200, "Письма не были получены"
-        # Извлечение токена письма
-        for item in response.json()['items']:
-            try:
-                user_data = json.loads(item['Content']['Body'])
-                user_login = user_data['Login']
-                activation_token = user_data.get("ConfirmationLinkUrl")
-                reset_token = user_data.get("ConfirmationLinkUri")
-                if user_login == login and activation_token and token_type == "activation":
-                    token = activation_token.split("/")[-1]
-                elif user_login == login and reset_token and token_type == "reset":
-                    token = reset_token.split("/")[-1]
-            except (JSONDecodeError, KeyError, TypeError):
-                continue
-        return token
+        with allure.step(f"Извлечь токена из письма для {login}"):
+            for item in response.json()['items']:
+                try:
+                    user_data = json.loads(item['Content']['Body'])
+                    user_login = user_data['Login']
+                    activation_token = user_data.get("ConfirmationLinkUrl")
+                    reset_token = user_data.get("ConfirmationLinkUri")
+                    if user_login == login and activation_token and token_type == "activation":
+                        token = activation_token.split("/")[-1]
+                    elif user_login == login and reset_token and token_type == "reset":
+                        token = reset_token.split("/")[-1]
+                except (JSONDecodeError, KeyError, TypeError):
+                    continue
+            return token
