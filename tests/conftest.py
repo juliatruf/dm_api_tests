@@ -5,6 +5,7 @@ from datetime import datetime
 
 import pytest
 from pathlib import Path
+from swagger_coverage_py.reporter import CoverageReporter
 from vyper import v
 from helpers.account_helper import AccountHelper
 from restclient.configuration import Configuration as MailhogConfiguration
@@ -12,6 +13,7 @@ from restclient.configuration import Configuration as DmApiConfiguration
 from services.dm_api_account import DMApiAccount
 from services.api_mailhog import MailHogApi
 import structlog
+
 
 structlog.configure(
     processors=[
@@ -29,6 +31,15 @@ options = (
     'user.login',
     'user.password'
 )
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_swagger_coverage():
+    host = "http://185.185.143.231:5051"
+    reporter = CoverageReporter(api_name="dm-api-account", host=host)
+    reporter.setup("/swagger/Account/swagger.json?urls.primaryName=Account")
+    yield
+    reporter.generate_report()
+    reporter.cleanup_input_files()
 
 
 @pytest.fixture(scope="session", autouse=True)
