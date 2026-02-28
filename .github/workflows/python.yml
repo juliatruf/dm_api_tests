@@ -64,6 +64,10 @@ jobs:
           ls swagger-coverage-output/
           COVERAGE_DIR=$(ls swagger-coverage-output/ | tail -1)
           echo "Используем папку: $COVERAGE_DIR"
+          echo "=== Файлы внутри папки ==="
+          ls -la swagger-coverage-output/$COVERAGE_DIR/
+          echo "=== Содержимое первого файла ==="
+          cat swagger-coverage-output/$COVERAGE_DIR/$(ls swagger-coverage-output/$COVERAGE_DIR/ | head -1)
           java -cp "$SWAGGER_LIB/*" \
           com.github.viclovsky.swagger.coverage.CommandLine \
           -s swagger-doc-dm-api-account.json \
