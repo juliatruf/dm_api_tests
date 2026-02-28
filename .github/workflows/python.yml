@@ -33,6 +33,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install --no-cache-dir -r requirements.txt
 
+      - name: Fix swagger-parser dependency
+        run: |
+          SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
+          rm -f $SWAGGER_LIB/swagger-parser-*.jar
+          rm -f $SWAGGER_LIB/swagger-parser-core-*.jar
+          rm -f $SWAGGER_LIB/swagger-parser-v3-*.jar
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser/2.1.12/swagger-parser-2.1.12.jar -P $SWAGGER_LIB
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-core/2.1.12/swagger-parser-core-2.1.12.jar -P $SWAGGER_LIB
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-v3/2.1.12/swagger-parser-v3-2.1.12.jar -P $SWAGGER_LIB
+          echo "=== Итоговые jar ==="
+          ls $SWAGGER_LIB/swagger-parser*.jar
+
       - name: Run tests
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
@@ -43,21 +55,6 @@ jobs:
           export JAVA_HOME=$JAVA_HOME
           pytest ./tests --alluredir=allure-results --disable-warnings
         continue-on-error: true
-
-      - name: Fix swagger-parser dependency
-        if: ${{ always() }}
-        run: |
-            SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
-            # Удаляем конфликтующие старые версии
-            rm -f $SWAGGER_LIB/swagger-parser-*.jar
-            rm -f $SWAGGER_LIB/swagger-parser-core-*.jar
-            rm -f $SWAGGER_LIB/swagger-parser-v3-*.jar
-            # Скачиваем совместимые версии
-            wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser/2.1.12/swagger-parser-2.1.12.jar -P $SWAGGER_LIB
-            wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-core/2.1.12/swagger-parser-core-2.1.12.jar -P $SWAGGER_LIB
-            wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-v3/2.1.12/swagger-parser-v3-2.1.12.jar -P $SWAGGER_LIB
-            echo "=== Итоговые jar в lib ==="
-            ls $SWAGGER_LIB/swagger-parser*.jar
 
       - name: Debug swagger-coverage java command
         if: ${{ always() }}
