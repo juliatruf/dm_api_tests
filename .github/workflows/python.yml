@@ -36,14 +36,10 @@ jobs:
       - name: Fix swagger-parser dependency
         run: |
           SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
-          rm -f $SWAGGER_LIB/swagger-parser-*.jar
-          rm -f $SWAGGER_LIB/swagger-parser-core-*.jar
-          rm -f $SWAGGER_LIB/swagger-parser-v3-*.jar
-          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser/2.1.12/swagger-parser-2.1.12.jar -P $SWAGGER_LIB
-          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-core/2.1.12/swagger-parser-core-2.1.12.jar -P $SWAGGER_LIB
-          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-v3/2.1.12/swagger-parser-v3-2.1.12.jar -P $SWAGGER_LIB
-          echo "=== Итоговые jar ==="
-          ls $SWAGGER_LIB/swagger-parser*.jar
+          echo "=== Все jar в lib ==="
+          ls $SWAGGER_LIB/*.jar
+          echo "=== Версия swagger-coverage-commandline ==="
+          ls $SWAGGER_LIB/swagger-coverage*.jar
 
       - name: Run tests
         env:
