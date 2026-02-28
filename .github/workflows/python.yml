@@ -61,11 +61,16 @@ jobs:
       - name: Debug swagger-coverage java command
         if: ${{ always() }}
         run: |
-            java -cp "/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib/*" \
-            com.github.viclovsky.swagger.coverage.CommandLine \
-            -s swagger-doc-dm-api-account.json \
-            -i swagger-coverage-output/185_185_143_231_5051 \
-            -c swagger-coverage-config-dm-api-account.json
+          SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
+          echo "=== Содержимое swagger-coverage-output ==="
+          ls swagger-coverage-output/
+          COVERAGE_DIR=$(ls swagger-coverage-output/ | tail -1)
+          echo "Используем папку: $COVERAGE_DIR"
+          java -cp "$SWAGGER_LIB/*" \
+          com.github.viclovsky.swagger.coverage.CommandLine \
+          -s swagger-doc-dm-api-account.json \
+          -i swagger-coverage-output/$COVERAGE_DIR \
+          -c swagger-coverage-config-dm-api-account.json
 
       - name: Run Coverage
         if: ${{ always() }}
