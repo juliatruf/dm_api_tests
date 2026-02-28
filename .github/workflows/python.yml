@@ -48,8 +48,10 @@ jobs:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
-          ls
-          python -m packages.notifier.bot
+          echo "=== корень проекта ==="
+          ls *.html 2>/dev/null || echo "html файлов нет в корне"
+          echo "=== swagger-coverage-output ==="
+          ls swagger-coverage-output/ 2>/dev/null || echo "папки нет"python -m packages.notifier.bot
 
       - name: Archive allure results
         uses: actions/upload-artifact@v4
