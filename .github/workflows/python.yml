@@ -16,7 +16,16 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.14'
+          python-version: '3.12'
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - name: Set JAVA_HOME
+        run: echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -24,9 +33,20 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
+          sed -i "s/^usernames =.*/usernames = ${{ secrets.TG_USERNAMES }}/" telegram-notifier-config.ini
+          export JAVA_HOME=$JAVA_HOME
           pytest ./tests --alluredir=allure-results --disable-warnings
         continue-on-error: true
+
+      - name: Run Coverage
+        if: ${{ always() }}
+        run: |
+          ls
+          python -m packages.notifier.bot
 
       - name: Archive allure results
         uses: actions/upload-artifact@v4
