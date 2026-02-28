@@ -13,20 +13,65 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.14'
+          python-version: '3.12'
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+
+      - name: Set JAVA_HOME
+        run: echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --no-cache-dir -r requirements.txt
+
+      - name: Fix swagger-parser dependency
+        run: |
+          SWAGGER_LIB=$(python -c "import swagger_coverage_py; import os; print(os.path.join(os.path.dirname(swagger_coverage_py.__file__), 'swagger-coverage-commandline', 'lib'))")
+          echo "Путь: $SWAGGER_LIB"
+          rm -f $SWAGGER_LIB/swagger-parser-*.jar
+          rm -f $SWAGGER_LIB/swagger-parser-core-*.jar
+          rm -f $SWAGGER_LIB/swagger-parser-v3-*.jar
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser/2.1.12/swagger-parser-2.1.12.jar -P $SWAGGER_LIB
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-core/2.1.12/swagger-parser-core-2.1.12.jar -P $SWAGGER_LIB
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-v3/2.1.12/swagger-parser-v3-2.1.12.jar -P $SWAGGER_LIB
+          echo "=== Итоговые jar ==="
+          ls $SWAGGER_LIB/swagger-parser*.jar
 
       - name: Run tests
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
+          sed -i "s/^usernames:.*/usernames: ${{ secrets.TG_USERNAMES }}/" telegram-notifier-config.ini
+          export JAVA_HOME=$JAVA_HOME
           pytest ./tests --alluredir=allure-results --disable-warnings
         continue-on-error: true
+
+      - name: Run Coverage
+        if: ${{ always() }}
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          echo "=== корень проекта ==="
+          ls *.html 2>/dev/null || echo "html файлов нет в корне"
+          echo "=== swagger-coverage-output ==="
+          ls swagger-coverage-output/ 2>/dev/null || echo "папки нет"
+          if [ -f "swagger-coverage-dm-api-account.html" ]; then
+            python -m packages.notifier.bot
+          else
+            echo "HTML файл не найден"
+            exit 1
+          fi
 
       - name: Archive allure results
         uses: actions/upload-artifact@v4

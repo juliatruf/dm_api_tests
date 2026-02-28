@@ -5,3 +5,7 @@ service:
 user:
   login: "jtruf_23_02_2026_23_56_59_5jqi1"
   password: "123456789"
+
+telegram:
+  chat_id: ${TG_CHAT_ID}
+  token: ${TG_TOKEN}

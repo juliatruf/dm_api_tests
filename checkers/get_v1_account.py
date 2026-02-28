@@ -4,7 +4,7 @@ import allure
 from hamcrest import assert_that as h_assert_that, all_of, has_property, has_properties, equal_to, has_items
 from assertpy import assert_that as a_assert_that, soft_assertions
 from checkers.http_checkers import check_status_code_http
-from dm_api_account.models.user_details_envelope import UserRole
+from clients.http.dm_api_account.models.user_details_envelope import UserRole
 
 
 class GetV1Account:
