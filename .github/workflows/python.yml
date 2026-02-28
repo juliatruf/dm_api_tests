@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -21,7 +22,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'adopt'
 
       - name: Set JAVA_HOME
@@ -42,6 +43,14 @@ jobs:
           pytest ./tests --alluredir=allure-results --disable-warnings
         continue-on-error: true
 
+      - name: Fix swagger-parser dependency
+        if: ${{ always() }}
+        run: |
+          SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser/2.1.12/swagger-parser-2.1.12.jar -P $SWAGGER_LIB
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-core/2.1.12/swagger-parser-core-2.1.12.jar -P $SWAGGER_LIB
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-v3/2.1.12/swagger-parser-v3-2.1.12.jar -P $SWAGGER_LIB
+
       - name: Debug swagger-coverage java command
         if: ${{ always() }}
         run: |
@@ -60,7 +69,8 @@ jobs:
           echo "=== корень проекта ==="
           ls *.html 2>/dev/null || echo "html файлов нет в корне"
           echo "=== swagger-coverage-output ==="
-          ls swagger-coverage-output/ 2>/dev/null || echo "папки нет"python -m packages.notifier.bot
+          ls swagger-coverage-output/ 2>/dev/null || echo "папки нет"
+          python -m packages.notifier.bot
 
       - name: Archive allure results
         uses: actions/upload-artifact@v4
