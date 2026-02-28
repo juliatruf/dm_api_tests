@@ -22,7 +22,10 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '11'
-          distribution: 'zulu'
+          distribution: 'adopt'
+
+      - name: Set JAVA_HOME
+        run: echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -35,6 +38,7 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           sed -i "s/^usernames =.*/usernames = ${{ secrets.TG_USERNAMES }}/" telegram-notifier-config.ini
+          export JAVA_HOME=$JAVA_HOME
           pytest ./tests --alluredir=allure-results --disable-warnings
         continue-on-error: true
 
