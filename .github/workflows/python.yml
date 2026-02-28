@@ -56,24 +56,6 @@ jobs:
           pytest ./tests --alluredir=allure-results --disable-warnings
         continue-on-error: true
 
-      - name: Debug swagger-coverage java command
-        if: ${{ always() }}
-        run: |
-          SWAGGER_LIB=$(python -c "import swagger_coverage_py; import os; print(os.path.join(os.path.dirname(swagger_coverage_py.__file__), 'swagger-coverage-commandline', 'lib'))")
-          echo "=== Содержимое swagger-coverage-output ==="
-          ls swagger-coverage-output/
-          COVERAGE_DIR=$(ls swagger-coverage-output/ | tail -1)
-          echo "Используем папку: $COVERAGE_DIR"
-          echo "=== Файлы внутри папки ==="
-          ls -la swagger-coverage-output/$COVERAGE_DIR/
-          echo "=== Содержимое первого файла ==="
-          cat swagger-coverage-output/$COVERAGE_DIR/$(ls swagger-coverage-output/$COVERAGE_DIR/ | head -1)
-          java -cp "$SWAGGER_LIB/*" \
-          com.github.viclovsky.swagger.coverage.CommandLine \
-          -s swagger-doc-dm-api-account.json \
-          -i swagger-coverage-output/$COVERAGE_DIR \
-          -c swagger-coverage-config-dm-api-account.json
-
       - name: Run Coverage
         if: ${{ always() }}
         env:
@@ -87,7 +69,7 @@ jobs:
           if [ -f "swagger-coverage-dm-api-account.html" ]; then
             python -m packages.notifier.bot
           else
-            echo "HTML файл не найден, swagger-coverage не отработал корректно"
+            echo "HTML файл не найден"
             exit 1
           fi
 
