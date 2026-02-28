@@ -46,19 +46,26 @@ jobs:
       - name: Fix swagger-parser dependency
         if: ${{ always() }}
         run: |
-          SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
-          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser/2.1.12/swagger-parser-2.1.12.jar -P $SWAGGER_LIB
-          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-core/2.1.12/swagger-parser-core-2.1.12.jar -P $SWAGGER_LIB
-          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-v3/2.1.12/swagger-parser-v3-2.1.12.jar -P $SWAGGER_LIB
+            SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
+            # Удаляем конфликтующие старые версии
+            rm -f $SWAGGER_LIB/swagger-parser-*.jar
+            rm -f $SWAGGER_LIB/swagger-parser-core-*.jar
+            rm -f $SWAGGER_LIB/swagger-parser-v3-*.jar
+            # Скачиваем совместимые версии
+            wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser/2.1.12/swagger-parser-2.1.12.jar -P $SWAGGER_LIB
+            wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-core/2.1.12/swagger-parser-core-2.1.12.jar -P $SWAGGER_LIB
+            wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-v3/2.1.12/swagger-parser-v3-2.1.12.jar -P $SWAGGER_LIB
+            echo "=== Итоговые jar в lib ==="
+            ls $SWAGGER_LIB/swagger-parser*.jar
 
       - name: Debug swagger-coverage java command
         if: ${{ always() }}
         run: |
-          java -cp "/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib/*" \
-          com.github.viclovsky.swagger.coverage.CommandLine \
-          -s swagger-doc-dm-api-account.json \
-          -i swagger-coverage-output/185_185_143_231_5051 \
-          -c swagger-coverage-config-dm-api-account.json
+            java -cp "/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib/*" \
+            com.github.viclovsky.swagger.coverage.CommandLine \
+            -s swagger-doc-dm-api-account.json \
+            -i swagger-coverage-output/185_185_143_231_5051 \
+            -c swagger-coverage-config-dm-api-account.json
 
       - name: Run Coverage
         if: ${{ always() }}
@@ -70,7 +77,13 @@ jobs:
           ls *.html 2>/dev/null || echo "html файлов нет в корне"
           echo "=== swagger-coverage-output ==="
           ls swagger-coverage-output/ 2>/dev/null || echo "папки нет"
-          python -m packages.notifier.bot
+          # Запускаем бота только если html файл существует
+          if [ -f "swagger-coverage-dm-api-account.html" ]; then
+            python -m packages.notifier.bot
+          else
+            echo "HTML файл не найден, swagger-coverage не отработал корректно"
+            exit 1
+          fi  
 
       - name: Archive allure results
         uses: actions/upload-artifact@v4
