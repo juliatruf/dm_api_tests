@@ -37,6 +37,7 @@ jobs:
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          SWAGGER_COVERAGE_DEBUG: "true"  # если библиотека читает env переменную
         run: |
           sed -i "s/^usernames =.*/usernames = ${{ secrets.TG_USERNAMES }}/" telegram-notifier-config.ini
           export JAVA_HOME=$JAVA_HOME
