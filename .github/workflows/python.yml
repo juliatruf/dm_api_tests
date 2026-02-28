@@ -35,17 +35,21 @@ jobs:
 
       - name: Fix swagger-parser dependency
         run: |
-          SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
-          echo "=== Все jar в lib ==="
-          ls $SWAGGER_LIB/*.jar
-          echo "=== Версия swagger-coverage-commandline ==="
-          ls $SWAGGER_LIB/swagger-coverage*.jar
+          SWAGGER_LIB=$(python -c "import swagger_coverage_py; import os; print(os.path.join(os.path.dirname(swagger_coverage_py.__file__), 'swagger-coverage-commandline', 'lib'))")
+          echo "Путь: $SWAGGER_LIB"
+          rm -f $SWAGGER_LIB/swagger-parser-*.jar
+          rm -f $SWAGGER_LIB/swagger-parser-core-*.jar
+          rm -f $SWAGGER_LIB/swagger-parser-v3-*.jar
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser/2.1.12/swagger-parser-2.1.12.jar -P $SWAGGER_LIB
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-core/2.1.12/swagger-parser-core-2.1.12.jar -P $SWAGGER_LIB
+          wget -q https://repo1.maven.org/maven2/io/swagger/parser/v3/swagger-parser-v3/2.1.12/swagger-parser-v3-2.1.12.jar -P $SWAGGER_LIB
+          echo "=== Итоговые jar ==="
+          ls $SWAGGER_LIB/swagger-parser*.jar
 
       - name: Run tests
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          SWAGGER_COVERAGE_DEBUG: "true"  # если библиотека читает env переменную
         run: |
           sed -i "s/^usernames =.*/usernames = ${{ secrets.TG_USERNAMES }}/" telegram-notifier-config.ini
           export JAVA_HOME=$JAVA_HOME
@@ -55,7 +59,7 @@ jobs:
       - name: Debug swagger-coverage java command
         if: ${{ always() }}
         run: |
-          SWAGGER_LIB="/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/swagger_coverage_py/swagger-coverage-commandline/lib"
+          SWAGGER_LIB=$(python -c "import swagger_coverage_py; import os; print(os.path.join(os.path.dirname(swagger_coverage_py.__file__), 'swagger-coverage-commandline', 'lib'))")
           echo "=== Содержимое swagger-coverage-output ==="
           ls swagger-coverage-output/
           COVERAGE_DIR=$(ls swagger-coverage-output/ | tail -1)
@@ -76,13 +80,12 @@ jobs:
           ls *.html 2>/dev/null || echo "html файлов нет в корне"
           echo "=== swagger-coverage-output ==="
           ls swagger-coverage-output/ 2>/dev/null || echo "папки нет"
-          # Запускаем бота только если html файл существует
           if [ -f "swagger-coverage-dm-api-account.html" ]; then
             python -m packages.notifier.bot
           else
             echo "HTML файл не найден, swagger-coverage не отработал корректно"
             exit 1
-          fi  
+          fi
 
       - name: Archive allure results
         uses: actions/upload-artifact@v4
